@@ -177,7 +177,7 @@ def render_sponsor_pills() -> None:
         _pill_html("OpenAI Codex", "Platinum", f"live · {codex_n} calls", "live"),
         _pill_html("Tavily", "Gold", f"live · {tavily_n} searches", "live"),
         _pill_html("Vultr", "Platinum", vultr_sub, vultr_status),
-        _pill_html("HackerSquad", "Bronze", "community partner", "ready"),
+        _pill_html("HackerSquad", "Bronze", "submitted", "live"),
     ]
     cols = st.columns(4, gap="small")
     for col, html in zip(cols, pills):
