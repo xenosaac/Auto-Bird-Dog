@@ -98,11 +98,20 @@ def _pill_html(name: str, tier: str, sub: str, status: str) -> str:
     # `tier` arg kept for API stability; deliberately not rendered (user request).
     cls = "sponsor-pill live" if status == "live" else "sponsor-pill ready"
     dot = "dot live" if status == "live" else "dot ready"
+    # If `sub` is a URL, render as a clickable link inside the pill.
+    if sub.startswith("http://") or sub.startswith("https://"):
+        sub_label = sub.replace("https://", "").replace("http://", "")
+        sub_html = (
+            f'<a class="sub" href="{_html.escape(sub)}" target="_blank" '
+            f'rel="noopener">{_html.escape(sub_label)}</a>'
+        )
+    else:
+        sub_html = f'<div class="sub">{_html.escape(sub)}</div>'
     return (
         f'<div class="{cls}">'
         f'<div class="row1"><span class="{dot}"></span>'
         f'<span class="name">{_html.escape(name)}</span></div>'
-        f'<div class="sub">{_html.escape(sub)}</div>'
+        f'{sub_html}'
         f'</div>'
     )
 
@@ -110,8 +119,11 @@ def _pill_html(name: str, tier: str, sub: str, status: str) -> str:
 def render_sponsor_pills() -> None:
     codex_n = int(st.session_state.get("codex_call_count", 0))
     tavily_n = int(st.session_state.get("tavily_call_count", 0))
-    vultr_status = "live" if os.getenv("VULTR_HOSTED", "").strip() else "ready"
-    vultr_sub = os.getenv("VULTR_URL", "").strip() or "deployment-ready"
+    vultr_url = os.getenv("VULTR_URL", "").strip()
+    vultr_hosted = os.getenv("VULTR_HOSTED", "").strip()
+    # Setting VULTR_URL to a real http(s) URL is enough to flip the pill to live.
+    vultr_status = "live" if (vultr_url or vultr_hosted) else "ready"
+    vultr_sub = vultr_url or "deployment-ready"
 
     pills = [
         _pill_html("OpenAI Codex", "Platinum", f"live · {codex_n} calls", "live"),

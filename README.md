@@ -1,6 +1,8 @@
 # Auto Bird Dog
 ### Type a prompt. Watch the agent search the web. Preview the personalized cold email.
 
+**🟢 Live demo**: [http://149.248.39.177](http://149.248.39.177) — hosted on Vultr (Seattle, vc2-1c-1gb)
+
 **Autonomous GTM Hackathon · AGI House × OpenAI Codex × Tavily × Vultr · 2026-05-09**
 **Track**: Adaptive Sales Claws (primary) + GTM Intelligence Benchmarks (secondary)
 

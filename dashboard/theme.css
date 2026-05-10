@@ -145,7 +145,8 @@ html, body, .stApp, [data-testid="stAppViewContainer"] {
 .sponsor-pill .dot.ready { background: #6b7280; }
 .sponsor-pill .name { font-weight: 700; font-size: 14px; color: var(--text-primary); }
 .sponsor-pill .tier { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
-.sponsor-pill .sub { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-secondary); }
+.sponsor-pill .sub { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-secondary); display: block; text-decoration: none; }
+.sponsor-pill a.sub:hover { color: var(--accent-from); text-decoration: underline; }
 
 /* Status banner above feed */
 .status-banner {
