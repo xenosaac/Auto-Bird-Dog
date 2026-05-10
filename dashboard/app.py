@@ -69,8 +69,52 @@ def inject_css() -> None:
 # Hero strip
 # ---------------------------------------------------------------------------
 
+def _detect_host_label() -> str:
+    """Resolve a human-readable 'Hosted at' label.
+
+    Priority:
+    1. VULTR_URL env (explicit override; e.g. http://1.2.3.4 or https://my.host).
+    2. Auto-detect this machine's outbound IPv4 by opening a UDP socket to a
+       public address (no packets are actually sent). On a Vultr instance this
+       returns the public-facing IP; on a laptop it returns the LAN IP, which
+       we treat as 'local' and fall back to localhost:<port>.
+    3. localhost:<STREAMLIT_SERVER_PORT or 8501>.
+
+    Cached at module level — no recomputation per script rerun.
+    """
+    explicit = os.getenv("VULTR_URL", "").strip()
+    if explicit:
+        return explicit
+
+    port = os.getenv("STREAMLIT_SERVER_PORT", "8501").strip() or "8501"
+    try:
+        import socket as _socket
+        s = _socket.socket(_socket.AF_INET, _socket.SOCK_DGRAM)
+        s.settimeout(0.5)
+        # Connecting a UDP socket doesn't send packets; it just selects the
+        # local interface that would be used to reach the destination.
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        if ip and not ip.startswith("127.") and not ip.startswith("169.254."):
+            # On private/LAN ranges (10.*, 192.168.*, 172.16-31.*) we still
+            # show the IP — useful when running on a venue LAN. The user can
+            # always override with VULTR_URL.
+            return f"http://{ip}" if port == "80" else f"http://{ip}:{port}"
+    except Exception:
+        pass
+
+    return f"localhost:{port}" if port != "80" else "localhost"
+
+
+_HOST_LABEL_CACHE: str | None = None
+
+
 def render_hero() -> None:
-    host_label = os.getenv("VULTR_URL", "").strip() or "localhost:8501"
+    global _HOST_LABEL_CACHE
+    if _HOST_LABEL_CACHE is None:
+        _HOST_LABEL_CACHE = _detect_host_label()
+    host_label = _HOST_LABEL_CACHE
     left, right = st.columns([3, 1], gap="small")
     with left:
         st.markdown(
@@ -121,9 +165,13 @@ def render_sponsor_pills() -> None:
     tavily_n = int(st.session_state.get("tavily_call_count", 0))
     vultr_url = os.getenv("VULTR_URL", "").strip()
     vultr_hosted = os.getenv("VULTR_HOSTED", "").strip()
-    # Setting VULTR_URL to a real http(s) URL is enough to flip the pill to live.
-    vultr_status = "live" if (vultr_url or vultr_hosted) else "ready"
-    vultr_sub = vultr_url or "deployment-ready"
+    # Auto-detected hostlabel — same source as the hero strip. If we resolved
+    # to a real http(s) URL on a non-loopback interface, the dashboard is
+    # actually being served publicly, so the Vultr pill should be live.
+    auto_host = _detect_host_label() if _HOST_LABEL_CACHE is None else _HOST_LABEL_CACHE
+    auto_is_public = auto_host.startswith("http://") or auto_host.startswith("https://")
+    vultr_status = "live" if (vultr_url or vultr_hosted or auto_is_public) else "ready"
+    vultr_sub = vultr_url or (auto_host if auto_is_public else "deployment-ready")
 
     pills = [
         _pill_html("OpenAI Codex", "Platinum", f"live · {codex_n} calls", "live"),
